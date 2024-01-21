@@ -1,10 +1,7 @@
-from flask import Flask, render_template, request, redirect, flash, get_flashed_messages
-import json
+from flask import Flask
 
-# Это callable WSGI-приложение
 app = Flask(__name__)
 
-
-@app.route('/')
+@app.route("/")
 def hello_world():
-    return 'Hello champion!'
+    return "<p>Hello, World!</p>"
