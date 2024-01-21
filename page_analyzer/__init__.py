@@ -1,4 +1,4 @@
-import page_analyzer.app
+from page_analyzer.app import app
 
 
 
