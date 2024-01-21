@@ -1,10 +1,8 @@
-import app
-from gendiff.cli.cli import parse_args
+import page_analyzer.app
 
 
 
 __all__ = (
     'app',
-    'parse_args',
 
 )
