@@ -32,7 +32,7 @@ def index(current_url=''):
 
 
 @app.route("/urls", methods=['GET', 'POST'])
-def add_to_table():
+def urls_page():
     if request.method == 'POST':
         url = request.form.get('url')
         normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
@@ -91,7 +91,7 @@ def get_table_id(id):
 
 
 @app.route("/urls/<id>/checks", methods=['POST'])
-def checks_url(id):
+def check_url(id):
     clause_where = ('id', id)
     response = urls_table.get_data_table(clause_where=clause_where)
 
