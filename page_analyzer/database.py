@@ -35,7 +35,11 @@ class DataBase:
 
         if clause_select == '*':
             with self.conn.cursor() as cursor:
-                cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
+                try:
+                    cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
+                except psycopg2.InterfaceError:
+                    cursor = self._reconnect
+                    cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
                 clause_select = ', '.join([
                     row[0]
                     if row[0] != 'created_at'
@@ -51,7 +55,11 @@ class DataBase:
                    f'{where_request}{order_request};'
 
         with self.conn.cursor() as cursor:
-            cursor.execute(request_, request_params)
+            try:
+                cursor.execute(request_, request_params)
+            except psycopg2.InterfaceError:
+                cursor = self._reconnect
+                cursor.execute(request_, request_params)
             result = cursor.fetchall()
 
         return result
@@ -65,7 +73,12 @@ class DataBase:
         request_ = f'INSERT INTO {self.name_table} ({name_fields})' \
                    f' VALUES ({req_values});'
         with self.conn.cursor() as cursor:
-            cursor.execute(request_, data_fields)
+            try:
+                cursor.execute(request_, data_fields)
+            except psycopg2.InterfaceError:
+                cursor = self._reconnect
+                cursor.execute(request_, data_fields)
+            
             self.conn.commit()
 
     def left_join_urls_and_url_cheks(self):
@@ -81,6 +94,20 @@ class DataBase:
             ORDER BY urls.id DESC;'''
 
         with self.conn.cursor() as cursor:
-            cursor.execute(request_)
+            try:
+                cursor.execute(request_)
+            except psycopg2.InterfaceError:
+                cursor = self._reconnect
+                cursor.execute(request_)
             result = cursor.fetchall()
         return result
+
+    def _reconnect(self):
+        cursor.close()
+        self.conn.close()
+        
+        # Reconnect 
+        self.conn = psycopg2.connect(DATABASE_URL)
+        cursor = self.conn.cursor()
+        
+        return cursor
