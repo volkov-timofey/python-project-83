@@ -38,7 +38,7 @@ def add_to_table():
         normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
 
         if not custom_validators_url(normalized_url):
-            flash('Неорректно введена страница')
+            flash('Некорректный URL')
             return redirect(url_for('index', current_url=url))
 
         clause_where = ('name', normalized_url)
@@ -96,7 +96,13 @@ def checks_url(id):
     response = urls_table.get_data_table(clause_where=clause_where)
 
     id, name, _ = next(iter(response))
-    r = requests.get(name)
+
+    try:
+        r = requests.get(name)
+    except OSError:
+        flash('Произошла ошибка при проверке')
+        return redirect(url_for('get_table_id', id=id,))
+
     status = r.status_code
 
     if status not in [200, 302]:
