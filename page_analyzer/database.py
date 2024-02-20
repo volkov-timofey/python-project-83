@@ -9,7 +9,6 @@ class DataBase:
             print('Can`t establish connection to database')
 
         self.name_table = name_table
-        self.cursor = self.conn.cursor()
 
     def _add_where(self, clause_where):
         name_field, value = clause_where
@@ -35,13 +34,14 @@ class DataBase:
             )
 
         if clause_select == '*':
-            self.cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
-            clause_select = ', '.join([
-                row[0]
-                if row[0] != 'created_at'
-                else 'DATE(created_at)'
-                for row in self.cursor.description
-            ])
+            with self.conn.cursor() as cursor:
+                cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
+                clause_select = ', '.join([
+                    row[0]
+                    if row[0] != 'created_at'
+                    else 'DATE(created_at)'
+                    for row in cursor.description
+                ])
 
         where_request, request_params = self._add_where(clause_where)
         order_request = self._add_order(clause_order)
@@ -49,9 +49,12 @@ class DataBase:
         request_ = f'SELECT {clause_select}' \
                    f' FROM {self.name_table}' \
                    f'{where_request}{order_request};'
-        self.cursor.execute(request_, request_params)
 
-        return self.cursor.fetchall()
+        with self.conn.cursor() as cursor:
+            cursor.execute(request_, request_params)
+            result = cursor.fetchall()
+
+        return result
 
     def change_table(self, name_fields, data_fields):
         if len(data_fields) != len(name_fields):
@@ -61,8 +64,9 @@ class DataBase:
 
         request_ = f'INSERT INTO {self.name_table} ({name_fields})' \
                    f' VALUES ({req_values});'
-        self.cursor.execute(request_, data_fields)
-        self.conn.commit()
+        with self.conn.cursor() as cursor:
+            cursor.execute(request_, data_fields)
+            self.conn.commit()
 
     def left_join_urls_and_url_cheks(self):
 
@@ -76,5 +80,7 @@ class DataBase:
             GROUP BY urls.id, url_checks.status_code
             ORDER BY urls.id DESC;'''
 
-        self.cursor.execute(request_)
-        return self.cursor.fetchall()
+        with self.conn.cursor() as cursor:
+            cursor.execute(request_)
+            result = cursor.fetchall()
+        return result
