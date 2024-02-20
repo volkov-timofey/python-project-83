@@ -105,10 +105,9 @@ class DataBase:
         return result
 
     def _reconnect(self):
-        conn.close()
+        self.conn.close()
 
         # Reconnect
-        conn = psycopg2.connect(self.database_url)
-        conn.cursor()
+        self.conn = psycopg2.connect(self.database_url)
 
-        return conn.cursor()
+        return self.conn.cursor()
