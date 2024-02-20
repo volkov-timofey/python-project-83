@@ -3,12 +3,14 @@ import psycopg2
 
 class DataBase:
     def __init__(self, DATABASE_URL, name_table):
+
+        self.name_table = name_table
+        self.database_url = DATABASE_URL
+
         try:
             self.conn = psycopg2.connect(DATABASE_URL)
         except ValueError:
             print('Can`t establish connection to database')
-
-        self.name_table = name_table
 
     def _add_where(self, clause_where):
         name_field, value = clause_where
@@ -78,7 +80,7 @@ class DataBase:
             except psycopg2.InterfaceError:
                 cursor = self._reconnect
                 cursor.execute(request_, data_fields)
-            
+
             self.conn.commit()
 
     def left_join_urls_and_url_cheks(self):
@@ -103,11 +105,10 @@ class DataBase:
         return result
 
     def _reconnect(self):
-        cursor.close()
         self.conn.close()
-        
-        # Reconnect 
-        self.conn = psycopg2.connect(DATABASE_URL)
+
+        # Reconnect
+        self.conn = psycopg2.connect(self.database_url)
         cursor = self.conn.cursor()
-        
+
         return cursor
