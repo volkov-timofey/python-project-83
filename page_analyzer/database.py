@@ -39,7 +39,7 @@ class DataBase:
             with self.conn.cursor() as cursor:
                 try:
                     cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
-                except psycopg2.InterfaceError:
+                except (psycopg2.InterfaceError, psycopg2.OperationalError):
                     cursor = self._reconnect
                     cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
                 clause_select = ', '.join([
@@ -59,7 +59,7 @@ class DataBase:
         with self.conn.cursor() as cursor:
             try:
                 cursor.execute(request_, request_params)
-            except psycopg2.InterfaceError:
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
                 cursor = self._reconnect
                 cursor.execute(request_, request_params)
             result = cursor.fetchall()
@@ -77,7 +77,7 @@ class DataBase:
         with self.conn.cursor() as cursor:
             try:
                 cursor.execute(request_, data_fields)
-            except psycopg2.InterfaceError:
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
                 cursor = self._reconnect
                 cursor.execute(request_, data_fields)
 
@@ -98,7 +98,7 @@ class DataBase:
         with self.conn.cursor() as cursor:
             try:
                 cursor.execute(request_)
-            except psycopg2.InterfaceError:
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
                 cursor = self._reconnect
                 cursor.execute(request_)
             result = cursor.fetchall()
