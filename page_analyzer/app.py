@@ -13,12 +13,11 @@ from page_analyzer.utils import custom_validators_url
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.secret_key = os.getenv('SECRET_KEY')
+app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-urls_table = DataBase(DATABASE_URL, 'urls')
-url_checks = DataBase(DATABASE_URL, 'url_checks')
+urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
+url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
 
 
 @app.route("/")
