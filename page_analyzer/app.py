@@ -73,7 +73,7 @@ def get_urls():
             )
 
 
-@app.route("/urls/<id>")
+@app.route("/urls/<int:id>")
 def get_table_id(id):
     clause_where = ('id', id)
     response = urls_table.get_data_table(clause_where=clause_where)
@@ -90,7 +90,7 @@ def get_table_id(id):
             )
 
 
-@app.route("/urls/<id>/checks", methods=['POST'])
+@app.route("/urls/<int:id>/checks", methods=['POST'])
 def checks_url(id):
     clause_where = ('id', id)
     response = urls_table.get_data_table(clause_where=clause_where)
