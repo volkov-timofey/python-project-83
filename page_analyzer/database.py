@@ -6,7 +6,8 @@ class DataBase:
 
         self.name_table = name_table
         self.database_url = DATABASE_URL
-        self._create_tables()
+        if name_table == 'urls':
+            self._create_tables()
 
         try:
             conn = psycopg2.connect(self.database_url)
