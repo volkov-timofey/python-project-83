@@ -82,7 +82,9 @@ class DataBase:
         try:
             conn = psycopg2.connect(self.database_url)
             with conn.cursor() as cursor:
+                cursor.execute('BEGIN;')
                 cursor.execute(request_, data_fields)
+                cursor.execute('COMMIT;')
         except ValueError:
             print('Can`t establish connection to database')
 
@@ -119,6 +121,9 @@ class DataBase:
 def create_tables(database_url):
     requests_ = (
         '''
+            BEGIN;
+        ''',
+        '''
             DROP TABLE IF EXISTS urls, url_checks;
         ''',
         '''
@@ -138,7 +143,10 @@ def create_tables(database_url):
                 description varchar(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+        ''',
         '''
+            COMMIT;
+        ''',
     )
     try:
         conn = psycopg2.connect(database_url)
