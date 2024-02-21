@@ -6,6 +6,7 @@ class DataBase:
 
         self.name_table = name_table
         self.database_url = DATABASE_URL
+        self._init_tables
 
         try:
             conn = psycopg2.connect(self.database_url)
@@ -21,7 +22,45 @@ class DataBase:
         except ValueError:
             print('Can`t establish connection to database')
 
-        conn.close()
+        finally:
+            conn.close()
+
+    def _init_tables(self):
+        request_ = None
+        if self.name_table == 'urls':
+            request_ = '''
+                CREATE TABLE urls (
+                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    name varchar(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            '''
+        if self.name_table == 'url_checks':
+            request_ = '''
+                CREATE TABLE url_checks (
+                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    url_id bigint ,
+                    status_code bigint,
+                    h1 varchar(255),
+                    title varchar(255),
+                    description varchar(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            '''
+        try:
+            conn = psycopg2.connect(self.database_url)
+            with conn.cursor() as cursor:
+                cursor.execute('DROP TABLE IF EXISTS urls, url_checks')
+                conn.commit()
+                if request_:
+                    cursor.execute(request_)
+
+        except ValueError:
+            print('Can`t establish connection to database')
+
+        finally:
+            conn.commit()
+            conn.close()
 
     def _add_where(self, clause_where):
         name_field, value = clause_where
@@ -64,8 +103,9 @@ class DataBase:
                 result = cursor.fetchall()
         except ValueError:
             print('Can`t establish connection to database')
+        finally:
+            conn.close()
 
-        conn.close()
         return result
 
     def change_table(self, name_fields, data_fields):
@@ -84,8 +124,9 @@ class DataBase:
         except ValueError:
             print('Can`t establish connection to database')
 
-        conn.commit()
-        conn.close()
+        finally:
+            conn.commit()
+            conn.close()
 
     def left_join_urls_and_url_cheks(self):
 
@@ -107,6 +148,7 @@ class DataBase:
                 result = cursor.fetchall()
         except ValueError:
             print('Can`t establish connection to database')
+        finally:
+            conn.close()
 
-        conn.close()
         return result
