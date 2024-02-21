@@ -6,8 +6,6 @@ class DataBase:
 
         self.name_table = name_table
         self.database_url = DATABASE_URL
-        if name_table == 'urls':
-            self._create_tables()
 
         try:
             conn = psycopg2.connect(self.database_url)
@@ -24,43 +22,6 @@ class DataBase:
             print('Can`t establish connection to database')
 
         finally:
-            conn.close()
-
-    def _create_tables(self):
-        requests_ = (
-            '''
-                DROP TABLE IF EXISTS urls, url_checks;
-            ''',
-            '''
-                CREATE TABLE urls (
-                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                    name varchar(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            ''',
-            '''
-                CREATE TABLE url_checks (
-                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                    url_id bigint ,
-                    status_code bigint,
-                    h1 varchar(255),
-                    title varchar(255),
-                    description varchar(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            '''
-        )
-        try:
-            conn = psycopg2.connect(self.database_url)
-            with conn.cursor() as cursor:
-                for req in requests_:
-                    cursor.execute(req)
-
-        except ValueError:
-            print('Can`t establish connection to database')
-
-        finally:
-            conn.commit()
             conn.close()
 
     def _add_where(self, clause_where):
@@ -153,3 +114,41 @@ class DataBase:
             conn.close()
 
         return result
+
+
+def create_tables(database_url):
+    requests_ = (
+        '''
+            DROP TABLE IF EXISTS urls, url_checks;
+        ''',
+        '''
+            CREATE TABLE urls (
+                id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                name varchar(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''',
+        '''
+            CREATE TABLE url_checks (
+                id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                url_id bigint ,
+                status_code bigint,
+                h1 varchar(255),
+                title varchar(255),
+                description varchar(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        '''
+    )
+    try:
+        conn = psycopg2.connect(database_url)
+        with conn.cursor() as cursor:
+            for req in requests_:
+                cursor.execute(req)
+
+    except ValueError:
+        print('Can`t establish connection to database')
+
+    finally:
+        conn.commit()
+        conn.close()
