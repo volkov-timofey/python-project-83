@@ -6,12 +6,12 @@ class DataBase:
 
         self.name_table = name_table
         self.database_url = DATABASE_URL
-        self._init_tables
+        self._create_tables()
 
         try:
             conn = psycopg2.connect(self.database_url)
             with conn.cursor() as cursor:
-                cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0')
+                cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0;')
                 self.select_all = ', '.join([
                     row[0]
                     if row[0] != 'created_at'
@@ -25,18 +25,19 @@ class DataBase:
         finally:
             conn.close()
 
-    def _init_tables(self):
-        request_ = None
-        if self.name_table == 'urls':
-            request_ = '''
+    def _create_tables(self):
+        requests_ = (
+            '''
+                DROP TABLE IF EXISTS urls, url_checks;
+            ''',
+            '''
                 CREATE TABLE urls (
                     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                     name varchar(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
+                );
+            ''',
             '''
-        if self.name_table == 'url_checks':
-            request_ = '''
                 CREATE TABLE url_checks (
                     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                     url_id bigint ,
@@ -45,15 +46,14 @@ class DataBase:
                     title varchar(255),
                     description varchar(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
+                );
             '''
+        )
         try:
             conn = psycopg2.connect(self.database_url)
             with conn.cursor() as cursor:
-                cursor.execute('DROP TABLE IF EXISTS urls, url_checks')
-                conn.commit()
-                if request_:
-                    cursor.execute(request_)
+                for req in requests_:
+                    cursor.execute(req)
 
         except ValueError:
             print('Can`t establish connection to database')
