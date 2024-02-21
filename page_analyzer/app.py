@@ -34,12 +34,12 @@ def index(current_url=''):
 def get_urls():
     if request.method == 'POST':
         url = request.form.get('url')
-        normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
 
-        if not custom_validators_url(normalized_url):
+        if not custom_validators_url(url):
             flash('Некорректный URL')
             return redirect(url_for('index', current_url=url))
 
+        normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
         clause_where = ('name', normalized_url)
         response = urls_table.get_data_table(clause_where=clause_where)
 
@@ -96,6 +96,7 @@ def checks_url(id):
 
     id, name, _ = next(iter(response))
 
+    # узкое место
     try:
         r = requests.get(name)
     except OSError:
