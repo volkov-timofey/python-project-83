@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 
-create_tables(app.config['DATABASE_URL'])
+# create_tables(app.config['DATABASE_URL'])
 
 urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
 url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
