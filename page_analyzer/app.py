@@ -16,20 +16,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 
-# create_tables(app.config['DATABASE_URL']) , create_tables
-
-# urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
-# url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
-
 
 @app.route("/")
 def index(current_url=''):
     if request.args.get('current_url'):
         current_url = request.args.get('current_url')
-    return render_template(
-        'main_page.html',
-        current_url=current_url,
-    )
+    return render_template('main_page.html', current_url=current_url)
 
 
 @app.post("/urls")
@@ -45,8 +37,7 @@ def add_url():
                     'main_page.html',
                     current_url=url,
                     ),
-                422
-                )
+                422)
 
     normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
     clause_where = ('name', normalized_url)
@@ -58,9 +49,7 @@ def add_url():
         return redirect(url_for('get_table_id',
                                 id=id,
                                 name=name,
-                                date_created=date_created,
-                                )
-                        )
+                                date_created=date_created,))
 
     db.change_table(name_table, ('name', ), (normalized_url, ))
     response = db.get_data_table(name_table, clause_where=clause_where)
@@ -69,9 +58,7 @@ def add_url():
     return redirect(url_for('get_table_id',
                             id=id,
                             name=name,
-                            date_created=date_created,
-                            )
-                    )
+                            date_created=date_created,))
 
 
 @app.get("/urls")
@@ -80,8 +67,7 @@ def get_urls():
     response = db.left_join_urls_and_url_cheks()
     return render_template(
             'table_sites.html',
-            urls=response,
-        )
+            urls=response,)
 
 
 @app.route("/urls/<int:id>")
@@ -95,13 +81,11 @@ def get_table_id(id):
     table_checks = db.get_data_table(
             name_table='url_checks',
             clause_where=('url_id', id),
-            clause_order='created_at'
-        )
+            clause_order='created_at')
     return render_template(
-                'url_page.html',
-                url_information=url_information,
-                table_checks=table_checks,
-            )
+                        'url_page.html',
+                        url_information=url_information,
+                        table_checks=table_checks,)
 
 
 @app.post("/urls/<int:id>/checks")

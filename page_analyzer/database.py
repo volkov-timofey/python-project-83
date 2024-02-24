@@ -53,9 +53,9 @@ class DataBase:
 
         if clause_select == '*':
             clause_select = self._get_all_fields(
-                                        self._connect_db(),
-                                        name_table
-                                        )
+                self._connect_db(),
+                name_table
+            )
 
         where_request, request_params = self._add_where(clause_where)
         order_request = self._add_order(clause_order)
