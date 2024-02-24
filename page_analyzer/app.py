@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, flash, \
-                    redirect, url_for, make_response
+                redirect, url_for, make_response
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
@@ -32,12 +32,8 @@ def add_url():
 
     if not is_valid_url(url):
         flash('Некорректный URL')
-        return make_response(
-                render_template(
-                    'main_page.html',
-                    current_url=url,
-                    ),
-                422)
+        return make_response(render_template('main_page.html',
+                                             current_url=url), 422)
 
     normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
     clause_where = ('name', normalized_url)
@@ -65,9 +61,7 @@ def add_url():
 def get_urls():
     db = DataBase(app.config['DATABASE_URL'])
     response = db.left_join_urls_and_url_cheks()
-    return render_template(
-            'table_sites.html',
-            urls=response,)
+    return render_template('table_sites.html', urls=response)
 
 
 @app.route("/urls/<int:id>")
@@ -78,14 +72,12 @@ def get_table_id(id):
     response = db.get_data_table(name_table='urls', clause_where=clause_where)
     url_information = next(iter(response))
 
-    table_checks = db.get_data_table(
-            name_table='url_checks',
-            clause_where=('url_id', id),
-            clause_order='created_at')
-    return render_template(
-                        'url_page.html',
-                        url_information=url_information,
-                        table_checks=table_checks,)
+    table_checks = db.get_data_table(name_table='url_checks',
+                                     clause_where=('url_id', id),
+                                     clause_order='created_at')
+    return render_template('url_page.html',
+                           url_information=url_information,
+                           table_checks=table_checks)
 
 
 @app.post("/urls/<int:id>/checks")
