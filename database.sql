@@ -1,4 +1,5 @@
 --noqa: disable=L010
+BEGIN;
 CREATE TABLE IF NOT EXISTS urls (
 	id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	name varchar(255),
@@ -14,3 +15,4 @@ CREATE TABLE IF NOT EXISTS url_checks (
 	description varchar(255),
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+COMMIT;
