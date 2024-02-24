@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, flash, \
-                redirect, url_for, make_response
+    redirect, url_for, make_response
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
