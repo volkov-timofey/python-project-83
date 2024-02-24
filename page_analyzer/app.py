@@ -1,7 +1,5 @@
 import os
-import requests
 
-from bs4 import BeautifulSoup
 from flask import Flask, render_template, request, flash, redirect, url_for
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
@@ -37,11 +35,11 @@ def index(current_url=''):
 def add_url():
     db = DataBase(app.config['DATABASE_URL'])
     url = request.form.get('url')
-    name_table='urls'
+    name_table = 'urls'
 
     if not is_valid_url(url):
         flash('Некорректный URL')
-        return redirect(url_for('index', current_url=url))
+        return redirect(url_for('index', current_url=url), code=422)
 
     normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
     clause_where = ('name', normalized_url)
@@ -68,6 +66,7 @@ def add_url():
                             )
                     )
 
+
 @app.get("/urls")
 def get_urls():
     db = DataBase(app.config['DATABASE_URL'])
@@ -81,7 +80,7 @@ def get_urls():
 @app.route("/urls/<int:id>")
 def get_table_id(id):
     db = DataBase(app.config['DATABASE_URL'])
-    
+
     clause_where = ('id', id)
     response = db.get_data_table(name_table='urls', clause_where=clause_where)
     url_information = next(iter(response))

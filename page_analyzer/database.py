@@ -8,13 +8,13 @@ class DataBase:
     def _connect_db(self):
         try:
             return psycopg2.connect(self.database_url)
-        
+
         except ValueError:
             print('Can`t establish connection to database')
 
     def _close_connect_db(self, connect):
         connect.close()
-        
+
     def _get_all_fields(self, connect, name_table):
         with connect.cursor() as cursor:
             cursor.execute(f'SELECT * FROM {name_table} LIMIT 0;')
@@ -52,7 +52,10 @@ class DataBase:
             )
 
         if clause_select == '*':
-            clause_select = self._get_all_fields(self._connect_db(), name_table)
+            clause_select = self._get_all_fields(
+                                        self._connect_db(),
+                                        name_table
+                                        )
 
         where_request, request_params = self._add_where(clause_where)
         order_request = self._add_order(clause_order)
@@ -81,7 +84,7 @@ class DataBase:
         with connect.cursor() as cursor:
             cursor.execute(request_, data_fields)
         connect.commit()
-        self._close_connect_db(connect)            
+        self._close_connect_db(connect)
 
     def left_join_urls_and_url_cheks(self):
 
@@ -100,6 +103,5 @@ class DataBase:
         with connect.cursor() as cursor:
             cursor.execute(request_)
             result = cursor.fetchall()
-        self._close_connect_db(connect)      
+        self._close_connect_db(connect)
         return result
-

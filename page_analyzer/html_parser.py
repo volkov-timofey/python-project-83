@@ -10,8 +10,9 @@ def check_url(name):
 
     if response.status_code in [200, 302]:
         return response
-    
+
     return None
+
 
 def parsing_html(name):
     response = check_url(name)
