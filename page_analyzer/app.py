@@ -1,6 +1,7 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, \
+                    redirect, url_for, make_response
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
@@ -39,7 +40,13 @@ def add_url():
 
     if not is_valid_url(url):
         flash('Некорректный URL')
-        return redirect(url_for('index', current_url=url), code=422)
+        return make_response(
+                render_template(
+                    'main_page.html',
+                    current_url=url,
+                    ),
+                422
+                )
 
     normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
     clause_where = ('name', normalized_url)
