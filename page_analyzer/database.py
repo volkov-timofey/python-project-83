@@ -7,6 +7,8 @@ class DataBase:
         self.name_table = name_table
         self.database_url = DATABASE_URL
 
+        create_tables(self.database_url)
+
         try:
             conn = psycopg2.connect(self.database_url)
             with conn.cursor() as cursor:

@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
-from page_analyzer.database import DataBase, create_tables
+from page_analyzer.database import DataBase
 from page_analyzer.utils import custom_validators_url
 
 
@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 
-# create_tables(app.config['DATABASE_URL'])
+# create_tables(app.config['DATABASE_URL']) , create_tables
 
 urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
 url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
