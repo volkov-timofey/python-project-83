@@ -7,19 +7,20 @@ from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
 from page_analyzer.database import DataBase
-from page_analyzer.utils import custom_validators_url
+from page_analyzer.utils import is_valid_url
+from page_analyzer.html_parser import parsing_html
 
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
 
 # create_tables(app.config['DATABASE_URL']) , create_tables
 
-urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
-url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
+# urls_table = DataBase(app.config['DATABASE_URL'], 'urls')
+# url_checks = DataBase(app.config['DATABASE_URL'], 'url_checks')
 
 
 @app.route("/")
@@ -32,33 +33,23 @@ def index(current_url=''):
     )
 
 
-@app.route("/urls", methods=['GET', 'POST'])
-def get_urls():
-    if request.method == 'POST':
-        url = request.form.get('url')
+@app.post("/urls")
+def add_url():
+    db = DataBase(app.config['DATABASE_URL'])
+    url = request.form.get('url')
+    name_table='urls'
 
-        if not custom_validators_url(url):
-            flash('Некорректный URL')
-            return redirect(url_for('index', current_url=url))
+    if not is_valid_url(url):
+        flash('Некорректный URL')
+        return redirect(url_for('index', current_url=url))
 
-        normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
-        clause_where = ('name', normalized_url)
-        response = urls_table.get_data_table(clause_where=clause_where)
+    normalized_url = f'{urlsplit(url).scheme}://{urlsplit(url).netloc}'
+    clause_where = ('name', normalized_url)
+    response = db.get_data_table(name_table, clause_where=clause_where)
 
-        if response:
-            flash('Страница уже существует')
-            id, name, date_created = next(iter(response))
-            return redirect(url_for('get_table_id',
-                                    id=id,
-                                    name=name,
-                                    date_created=date_created,
-                                    )
-                            )
-
-        urls_table.change_table(('name', ), (normalized_url, ))
-        response = urls_table.get_data_table(clause_where=clause_where)
+    if response:
+        flash('Страница уже существует')
         id, name, date_created = next(iter(response))
-        flash('Страница успешно добавлена')
         return redirect(url_for('get_table_id',
                                 id=id,
                                 name=name,
@@ -66,21 +57,37 @@ def get_urls():
                                 )
                         )
 
-    if request.method == 'GET':
-        response = urls_table.left_join_urls_and_url_cheks()
-        return render_template(
-                'table_sites.html',
-                urls=response,
-            )
+    db.change_table(name_table, ('name', ), (normalized_url, ))
+    response = db.get_data_table(name_table, clause_where=clause_where)
+    id, name, date_created = next(iter(response))
+    flash('Страница успешно добавлена')
+    return redirect(url_for('get_table_id',
+                            id=id,
+                            name=name,
+                            date_created=date_created,
+                            )
+                    )
+
+@app.get("/urls")
+def get_urls():
+    db = DataBase(app.config['DATABASE_URL'])
+    response = db.left_join_urls_and_url_cheks()
+    return render_template(
+            'table_sites.html',
+            urls=response,
+        )
 
 
 @app.route("/urls/<int:id>")
 def get_table_id(id):
+    db = DataBase(app.config['DATABASE_URL'])
+    
     clause_where = ('id', id)
-    response = urls_table.get_data_table(clause_where=clause_where)
+    response = db.get_data_table(name_table='urls', clause_where=clause_where)
     url_information = next(iter(response))
 
-    table_checks = url_checks.get_data_table(
+    table_checks = db.get_data_table(
+            name_table='url_checks',
             clause_where=('url_id', id),
             clause_order='created_at'
         )
@@ -91,37 +98,24 @@ def get_table_id(id):
             )
 
 
-@app.route("/urls/<int:id>/checks", methods=['POST'])
+@app.post("/urls/<int:id>/checks")
 def checks_url(id):
+    db = DataBase(app.config['DATABASE_URL'])
     clause_where = ('id', id)
-    response = urls_table.get_data_table(clause_where=clause_where)
+    response = db.get_data_table(name_table='urls', clause_where=clause_where)
 
     id, name, _ = next(iter(response))
 
     # узкое место
-    try:
-        r = requests.get(name)
-    except OSError:
+    tags_information = parsing_html(name)
+    if not tags_information:
         flash('Произошла ошибка при проверке')
         return redirect(url_for('get_table_id', id=id,))
 
-    status = r.status_code
-
-    if status not in [200, 302]:
-        flash('Произошла ошибка при проверке')
-        return redirect(url_for('get_table_id', id=id,))
-
-    soup = BeautifulSoup(r.content, 'html.parser')
-    h1 = soup.find("h1").string if soup.find("h1") else ''
-    title = soup.find("title").string if soup.find("title") else ''
-    description = soup.find(attrs={"name": "description"}).get('content') \
-        if soup.find(attrs={"name": "description"}) \
-        else ''
-
-    url_checks.change_table(
-        ('url_id', 'status_code', 'h1', 'title', 'description'),
-        (id, status, h1, title, description)
-    )
+    tags_information['url_id'] = id
+    name_fields = tuple(tag for tag in tags_information)
+    values_fields = tuple(value for value in tags_information.values())
+    db.change_table('url_checks', name_fields, values_fields)
 
     flash('Страница успешно проверена')
     return redirect(url_for('get_table_id', id=id))

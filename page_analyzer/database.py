@@ -2,27 +2,30 @@ import psycopg2
 
 
 class DataBase:
-    def __init__(self, DATABASE_URL, name_table):
-
-        self.name_table = name_table
+    def __init__(self, DATABASE_URL):
         self.database_url = DATABASE_URL
 
+    def _connect_db(self):
         try:
-            conn = psycopg2.connect(self.database_url)
-            with conn.cursor() as cursor:
-                cursor.execute(f'SELECT * FROM {self.name_table} LIMIT 0;')
-                self.select_all = ', '.join([
-                    row[0]
-                    if row[0] != 'created_at'
-                    else 'DATE(created_at)'
-                    for row in cursor.description
-                ])
-
+            return psycopg2.connect(self.database_url)
+        
         except ValueError:
             print('Can`t establish connection to database')
 
-        finally:
-            conn.close()
+    def _close_connect_db(self, connect):
+        connect.close()
+        
+    def _get_all_fields(self, connect, name_table):
+        with connect.cursor() as cursor:
+            cursor.execute(f'SELECT * FROM {name_table} LIMIT 0;')
+            select_all = ', '.join([
+                row[0]
+                if row[0] != 'created_at'
+                else 'DATE(created_at)'
+                for row in cursor.description
+            ])
+        self._close_connect_db(connect)
+        return select_all
 
     def _add_where(self, clause_where):
         name_field, value = clause_where
@@ -38,6 +41,7 @@ class DataBase:
 
     def get_data_table(
         self,
+        name_table,
         clause_select='*',
         clause_where: (str, str) = ('', ''),
         clause_order=None
@@ -48,49 +52,36 @@ class DataBase:
             )
 
         if clause_select == '*':
-            clause_select = self.select_all
+            clause_select = self._get_all_fields(self._connect_db(), name_table)
 
         where_request, request_params = self._add_where(clause_where)
         order_request = self._add_order(clause_order)
 
         request_ = f'SELECT {clause_select}' \
-                   f' FROM {self.name_table}' \
+                   f' FROM {name_table}' \
                    f'{where_request}{order_request};'
 
         # узкое место
-        try:
-            conn = psycopg2.connect(self.database_url)
-            with conn.cursor() as cursor:
-                cursor.execute(request_, request_params)
-                result = cursor.fetchall()
-        except ValueError:
-            print('Can`t establish connection to database')
-        finally:
-            conn.close()
-
+        connect = self._connect_db()
+        with connect.cursor() as cursor:
+            cursor.execute(request_, request_params)
+            result = cursor.fetchall()
+        self._close_connect_db(connect)
         return result
 
-    def change_table(self, name_fields, data_fields):
-        if len(data_fields) != len(name_fields):
-            raise ValueError('different count variables for inser to DB')
+    def change_table(self, name_table, name_fields, data_fields):
+
         req_values = ', '.join('%s' for i in name_fields)
         name_fields = ', '.join(name for name in name_fields)
 
-        request_ = f'INSERT INTO {self.name_table} ({name_fields})' \
+        request_ = f'INSERT INTO {name_table} ({name_fields})' \
                    f' VALUES ({req_values});'
         # узкое место
-        try:
-            conn = psycopg2.connect(self.database_url)
-            with conn.cursor() as cursor:
-                cursor.execute('BEGIN;')
-                cursor.execute(request_, data_fields)
-                cursor.execute('COMMIT;')
-        except ValueError:
-            print('Can`t establish connection to database')
-
-        finally:
-            conn.commit()
-            conn.close()
+        connect = self._connect_db()
+        with connect.cursor() as cursor:
+            cursor.execute(request_, data_fields)
+        connect.commit()
+        self._close_connect_db(connect)            
 
     def left_join_urls_and_url_cheks(self):
 
@@ -105,55 +96,10 @@ class DataBase:
             ORDER BY urls.id DESC;'''
 
         # узкое место
-        try:
-            conn = psycopg2.connect(self.database_url)
-            with conn.cursor() as cursor:
-                cursor.execute(request_)
-                result = cursor.fetchall()
-        except ValueError:
-            print('Can`t establish connection to database')
-        finally:
-            conn.close()
-
+        connect = self._connect_db()
+        with connect.cursor() as cursor:
+            cursor.execute(request_)
+            result = cursor.fetchall()
+        self._close_connect_db(connect)      
         return result
 
-
-def create_tables(database_url):
-    requests_ = (
-        '''
-            BEGIN;
-        ''',
-        '''
-            CREATE TABLE IF NOT EXISTS urls (
-                id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                name varchar(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''',
-        '''
-            CREATE TABLE IF NOT EXISTS url_checks (
-                id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                url_id bigint ,
-                status_code bigint,
-                h1 varchar(255),
-                title varchar(255),
-                description varchar(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        ''',
-        '''
-            COMMIT;
-        ''',
-    )
-    try:
-        conn = psycopg2.connect(database_url)
-        with conn.cursor() as cursor:
-            for req in requests_:
-                cursor.execute(req)
-            conn.commit()
-
-    except ValueError:
-        print('Can`t establish connection to database')
-
-    finally:
-        conn.close()
