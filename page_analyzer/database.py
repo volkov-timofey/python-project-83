@@ -152,10 +152,10 @@ def create_tables(database_url):
         with conn.cursor() as cursor:
             for req in requests_:
                 cursor.execute(req)
+            conn.commit()
 
     except ValueError:
         print('Can`t establish connection to database')
 
     finally:
-        conn.commit()
         conn.close()
