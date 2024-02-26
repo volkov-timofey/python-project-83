@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "hexlet-code"
 version = "0.1.0"
-description = "Page analizer"
+description = "Page Analyzer is a site that analyzes specified pages for SEO suitability."
 authors = ["Tim Volkov <volkov.timm@gmail.com>"]
 readme = "README.md"
 packages = [{include = "page_analyzer"}]

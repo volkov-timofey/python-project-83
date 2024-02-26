@@ -2,9 +2,12 @@ from bs4 import BeautifulSoup
 import requests
 
 
-def check_url(name):
+def check_url(url: str):
+    '''
+    Сhecking url address for availability
+    '''
     try:
-        response = requests.get(name)
+        response = requests.get(url)
     except OSError:
         return None
 
@@ -14,8 +17,11 @@ def check_url(name):
     return None
 
 
-def parsing_html(name):
-    response = check_url(name)
+def parsing_html(url: str) -> dict | None:
+    '''
+    Extracting information from availabily url
+    '''
+    response = check_url(url)
     if not response:
         return response
 
